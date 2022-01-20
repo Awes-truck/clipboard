@@ -1,22 +1,30 @@
 import clipboard
-import json
+import psutil
+import sqlite3 as sql
 import time
 from pynput import keyboard
-import os.path
+import os
 
-CB_FILEPATH = 'clipboard.json'
 HOTKEY = '<ctrl>+c'
-DATA = {}
-COUNT = 0
 CURRENT_DATETIME = time.asctime(time.localtime())
+DB_PATH = 'clipboard.db'
+PATH_DIR = os.path.abspath('clipboard.db')
+
+conn = sql.connect(DB_PATH)
+cursor = conn.cursor()
+cursor.execute(
+    "CREATE TABLE IF NOT EXISTS clipboard (id INTEGER PRIMARY KEY, content TEXT NOT NULL, datetime TEXT NOT NULL)")
+getTable = cursor.execute(
+  """SELECT name FROM sqlite_master WHERE type='table'
+  AND name='clipboard'; """).fetchall()
+if getTable != []:
+    conn.commit()
+conn.close()
 
 
 def on_activate():
-    global DATA
-
-    DATA = clipboard.paste()
-    save_clipboard(DATA)
-    pass
+    data = clipboard.paste()
+    save_clipboard(data)
 
 
 def for_canonical(f):
@@ -24,36 +32,30 @@ def for_canonical(f):
 
 
 def save_clipboard(data):
-    with open(CB_FILEPATH, 'w') as file:
-        json.dump(data, file, indent=4)
+    global CURRENT_DATETIME
+    conn = sql.connect(DB_PATH)
+    insert = conn.cursor()
+    insert.execute("INSERT INTO clipboard (content, datetime) VALUES (?, ?)",
+                   (data, CURRENT_DATETIME))
+    conn.commit()
 
 
-#def save_buffer(data):
-    #time.sleep(60)
-    #save_clipboard(data)
+def view_data():
+    conn.close()
+    view = sql.connect(DB_PATH)
+    cursor = view.cursor()
+    cursor.execute("SELECT * FROM clipboard")
+    rows = cursor.fetchall()
+    for row in rows:
+        print(row)
 
 
-def pre_checks():
-    fileExists = os.path.exists(CB_FILEPATH)
-    global COUNT
+view_data()
 
-    # Check if the file exists, if not, create it
-    if not fileExists:
-        with open(CB_FILEPATH, 'w') as file:
-            json.dump({}, file)
-
-    fileSize = os.path.getsize(CB_FILEPATH)
-    # Resume the count from the last key if possible
-    with open(CB_FILEPATH, 'r') as file:
-        tempData = json.load(file)
-        # Check if file is empty
-        if not fileSize <= 2:
-            getCount = list(tempData.keys())[-1]
-            COUNT = getCount
-
-
-pre_checks()
-print(COUNT)
+# while True:
+#     choice = input("View data? Y/N:")
+#     if choice == 'Y':
+#         view_data()
 
 hotkey = keyboard.HotKey(
     keyboard.HotKey.parse(HOTKEY),
