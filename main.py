@@ -52,7 +52,7 @@ def save_clipboard():
 def view_data():
     view = sql.connect(DB_PATH)
     cursor = view.cursor()
-    cursor.execute("SELECT * FROM clipboard;")
+    cursor.execute("SELECT * FROM clipboard")
     rows = cursor.fetchall()
     for row in rows:
         print(row)
@@ -61,7 +61,7 @@ def view_data():
 def delete_all_data():
     delete = sql.connect(DB_PATH)
     cursor = delete.cursor()
-    cursor.execute("DELETE FROM clipboard;")
+    cursor.execute("DELETE FROM clipboard")
     delete.commit()
 
 
