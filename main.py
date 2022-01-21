@@ -2,18 +2,25 @@ import clipboard
 import sqlite3 as sql
 import time
 from pynput import keyboard
-import os
 
 HOTKEY = '<ctrl>+c'
 CURRENT_DATETIME = time.asctime(time.localtime())
 DB_PATH = 'clipboard.db'
-PATH_DIR = os.path.abspath('clipboard.db')
 
-conn = sql.connect(DB_PATH)
-cursor = conn.cursor()
-cursor.execute(
+
+def check_conn():
+    try:
+        conn.cursor()
+        return True
+    except Exception:
+        return False
+
+
+if not check_conn():
+    conn = sql.connect(DB_PATH)
+conn.cursor().execute(
     "CREATE TABLE IF NOT EXISTS clipboard (id INTEGER PRIMARY KEY, content TEXT NOT NULL, datetime TEXT NOT NULL)")
-getTable = cursor.execute(
+getTable = conn.cursor().execute(
   """SELECT name FROM sqlite_master WHERE type='table'
   AND name='clipboard'; """).fetchall()
 if getTable != []:
@@ -32,19 +39,20 @@ def for_canonical(f):
 
 def save_clipboard(data):
     global CURRENT_DATETIME
-    conn = sql.connect(DB_PATH)
-    insert = conn.cursor()
-    insert.execute("INSERT INTO clipboard (content, datetime) VALUES (?, ?)",
-                   (data, CURRENT_DATETIME))
+    if not check_conn():
+        conn = sql.connect(DB_PATH)
+    conn.cursor().execute("INSERT INTO clipboard (content, datetime) VALUES (?, ?)",
+                          (data, CURRENT_DATETIME))
     conn.commit()
+    print("Saved: " + data)
 
 
 def view_data():
-    conn.close()
+    if check_conn():
+        conn.close()
     view = sql.connect(DB_PATH)
-    cursor = view.cursor()
-    cursor.execute("SELECT * FROM clipboard")
-    rows = cursor.fetchall()
+    view.cursor().execute("SELECT * FROM clipboard")
+    rows = view.cursor().fetchall()
     for row in rows:
         print(row)
 
