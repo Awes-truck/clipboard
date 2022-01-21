@@ -1,5 +1,4 @@
 import clipboard
-import psutil
 import sqlite3 as sql
 import time
 from pynput import keyboard
@@ -49,13 +48,6 @@ def view_data():
     for row in rows:
         print(row)
 
-
-view_data()
-
-# while True:
-#     choice = input("View data? Y/N:")
-#     if choice == 'Y':
-#         view_data()
 
 hotkey = keyboard.HotKey(
     keyboard.HotKey.parse(HOTKEY),
