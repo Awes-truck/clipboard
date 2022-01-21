@@ -54,6 +54,7 @@ def view_data():
     cursor = view.cursor()
     cursor.execute("SELECT * FROM clipboard")
     rows = cursor.fetchall()
+    view.commit()
     for row in rows:
         print(row)
 
@@ -72,7 +73,6 @@ button_delete_all = Button(ROOT, text="Delete All", command=delete_all_data)
 button_exit.pack()
 button_refresh.pack()
 button_delete_all.pack()
-ROOT.mainloop()
 
 
 hotkey = keyboard.HotKey(
@@ -82,4 +82,5 @@ hotkey = keyboard.HotKey(
 with keyboard.Listener(
         on_press=for_canonical(hotkey.press),
         on_release=for_canonical(hotkey.release)) as listener:
+    ROOT.mainloop()
     listener.join()
