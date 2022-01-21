@@ -10,19 +10,19 @@ CURRENT_DATETIME = time.asctime(time.localtime())
 DB_PATH = 'clipboard.db'
 
 
-def check_conn():
+def check_conn(connection):
     try:
-        conn.cursor()
+        connection.cursor()
         return True
     except Exception:
         return False
 
 
-if not check_conn():
-    conn = sql.connect(DB_PATH)
-conn.cursor().execute(
+conn = sql.connect(DB_PATH)
+cursor = conn.cursor()
+cursor.execute(
     "CREATE TABLE IF NOT EXISTS clipboard (id INTEGER PRIMARY KEY, content TEXT NOT NULL, datetime TEXT NOT NULL)")
-getTable = conn.cursor().execute(
+getTable = cursor.execute(
   """SELECT name FROM sqlite_master WHERE type='table'
   AND name='clipboard'; """).fetchall()
 if getTable != []:
@@ -31,32 +31,48 @@ conn.close()
 
 
 def on_activate():
-    data = clipboard.paste()
-    save_clipboard(data)
+    save_clipboard()
 
 
 def for_canonical(f):
     return lambda k: f(listener.canonical(k))
 
 
-def save_clipboard(data):
+def save_clipboard():
     global CURRENT_DATETIME
-    if not check_conn():
-        conn = sql.connect(DB_PATH)
-    conn.cursor().execute("INSERT INTO clipboard (content, datetime) VALUES (?, ?)",
-                          (data, CURRENT_DATETIME))
+    data = clipboard.paste()
+    conn = sql.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute(
+        "INSERT INTO clipboard (content, datetime) VALUES (?, ?)", (data, CURRENT_DATETIME))
     conn.commit()
     print("Saved: " + data)
 
 
 def view_data():
-    if check_conn():
-        conn.close()
     view = sql.connect(DB_PATH)
-    view.cursor().execute("SELECT * FROM clipboard")
-    rows = view.cursor().fetchall()
+    cursor = view.cursor()
+    cursor.execute("SELECT * FROM clipboard;")
+    rows = cursor.fetchall()
     for row in rows:
         print(row)
+
+
+def delete_all_data():
+    delete = sql.connect(DB_PATH)
+    cursor = delete.cursor()
+    cursor.execute("DELETE FROM clipboard;")
+    delete.commit()
+
+
+button_exit = Button(ROOT, text="Exit", command=quit)
+button_refresh = Button(ROOT, text="Show Clipboard", command=view_data)
+button_delete_all = Button(ROOT, text="Delete All", command=delete_all_data)
+
+button_exit.pack()
+button_refresh.pack()
+button_delete_all.pack()
+ROOT.mainloop()
 
 
 hotkey = keyboard.HotKey(
@@ -67,11 +83,3 @@ with keyboard.Listener(
         on_press=for_canonical(hotkey.press),
         on_release=for_canonical(hotkey.release)) as listener:
     listener.join()
-
-
-button_exit = Button(root, text="Exit", command=ROOT.quit)
-button_refresh = Button(root, text="Refresh", command=view_data)
-
-button_exit.pack()
-button_refresh.pack()
-ROOT.mainloop()
