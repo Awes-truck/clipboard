@@ -2,6 +2,8 @@ import clipboard
 import sqlite3 as sql
 import time
 from pynput import keyboard
+from tkinter import *
+ROOT = Tk()
 
 HOTKEY = '<ctrl>+c'
 CURRENT_DATETIME = time.asctime(time.localtime())
@@ -65,3 +67,11 @@ with keyboard.Listener(
         on_press=for_canonical(hotkey.press),
         on_release=for_canonical(hotkey.release)) as listener:
     listener.join()
+
+
+button_exit = Button(root, text="Exit", command=ROOT.quit)
+button_refresh = Button(root, text="Refresh", command=view_data)
+
+button_exit.pack()
+button_refresh.pack()
+ROOT.mainloop()
